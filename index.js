@@ -1,75 +1,65 @@
 import { createServer } from 'node:http';
-const hostname = '127.0.0.1'; //тот ip адрес на котором мы хотим запуститься
-const port = 3000;
-const server = createServer((req, res) => {
-    const url = req.url
-    const method = req.method
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    // если мы на главной страничке и метод у нас GET 
-    if( url === '/' && method === 'GET'){
-        res.write(`
-            <a  href="/">Главная</a>
-            <a  href="/contacts">Контакты</a>
-            <h1>Главная страница</h1>
-            `)
-    }
-    if( url === '/contacts' && method === 'GET'){
-        res.write(`
-            <a  href="/">Главная</a>
-            <a  href="/contacts">Контакты</a>
-            <h1>Контакты</h1>
-            `)
-    }
+import fs from 'node:fs'
+import { changeStatus, createTask, getData, initCounter } from './storage.js';
 
+const pages = './pages'
+const hostname = '0.0.0.0';
+const port = 5500;
+function init() {
+  initCounter()
+}
+const server = createServer((req, res) => {
+  const url = req.url
+  const method = req.method
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5501'); 
+  //res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  if (method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     res.end();
+  }
+
+
+  if (url === '/tasks' && method === 'POST') {
+    let body = [];
+    req.on('data', chunk => {
+      body.push(chunk);
+      console.log(chunk);
+    }).on('end', () => {
+      body = Buffer.concat(body).toString();
+      const item = JSON.parse(body)
+      const result = createTask(item)
+      console.log(result);
+      res.end(result)
+    });
+  }
+
+  // TODO Change Status
+  if (url === '/tasks' && method === 'PATCH') {
+    let body = [];
+    req.on('data', chunk => {
+      body.push(chunk);
+      console.log(chunk);
+    }).on('end', () => { 
+      body = Buffer.concat(body).toString();
+      const requestData = JSON.parse(body)
+      const changedData = changeStatus(requestData.id)
+      res.end(changedData)
+    });
+  }
+
+  // ToDO Delete Task
+  if (url === '/tasks' && method === 'DELETE') { }
+
+  if (url === '/tasks' && method === 'GET') {
+    const result = getData()
+    res.end(result)
+  }
+ 
 });
 
 server.listen(port, hostname, () => {
+  init()
   console.log(`Server running at http://${hostname}:${port}/`);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-//всегда {} перед тем как что-то импортироровать
-import {someFunc, someFunc2, arr} from "./util";
-
-const obj = {
-    name: 'test',
-    age: 20,
-    height: 170
-}
-
-//const name1 = obj.name //копия
-//const age1 = obj.age
-const {name, age } = obj
-
-someFunc()
-*/
