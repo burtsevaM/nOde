@@ -1,9 +1,9 @@
 import { createServer } from 'node:http';
 import fs from 'node:fs'
-import { changeStatus, createTask, getData, initCounter } from './storage.js';
+import { changeStatus, createTask, deleteTask, getData, initCounter } from './storage.js';
 
-const pages = './pages'
-const hostname = '0.0.0.0';
+//const pages = './pages'
+const hostname = '127.0.0.1';
 const port = 5500;
 function init() {
   initCounter()
@@ -14,7 +14,7 @@ const server = createServer((req, res) => {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5501'); 
-  //res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   if (method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     res.end();
@@ -36,7 +36,7 @@ const server = createServer((req, res) => {
   }
 
   // TODO Change Status
-  if (url === '/tasks' && method === 'PATCH') {
+  if (url === '/tasks/edit' && method === 'PATCH') {
     let body = [];
     req.on('data', chunk => {
       body.push(chunk);
@@ -50,13 +50,24 @@ const server = createServer((req, res) => {
   }
 
   // ToDO Delete Task
-  if (url === '/tasks' && method === 'DELETE') { }
+  if (url === '/tasks' && method === 'DELETE') { 
+    let body = [];
+    req.on('data', chunk => {
+      body.push(chunk);
+      console.log(chunk);
+    }).on('end', () => { 
+      body = Buffer.concat(body).toString();
+      const requestData = JSON.parse(body)
+      const changedData = deleteTask(requestData.id)
+      res.end()
+    });
+  }
 
   if (url === '/tasks' && method === 'GET') {
     const result = getData()
     res.end(result)
   }
- 
+
 });
 
 server.listen(port, hostname, () => {
